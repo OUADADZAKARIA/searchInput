@@ -1,37 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Search Input</title>
-<style>
-    input[type="search"]::-webkit-search-cancel-button {
-        display: none;
-    }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Input</title>
+    <style>
+        input[type="search"]::-webkit-search-cancel-button {
+            display: none;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-<input type="search" id="searchInput" oninput="showClearButton()" placeholder="Search...">
-<button id="clearButton" style="display: none;" onclick="clearInput()">X</button>
+    <input type="search" id="searchInput" placeholder="Search...">
+    <button id="clearButton" style="display: none;">X</button>
+    <script>
+        $(document).ready(function() {
+            $("#searchInput").on("input", function() {
+                if ($(this).val().length >= 3) {
+                    $("#clearButton").show();
+                } else {
+                    $("#clearButton").hide();
+                }
+            });
 
-<script>
-    function showClearButton() {
-        var input = document.getElementById("searchInput");
-        var clearButton = document.getElementById("clearButton");
-
-        if (input.value.length >= 3) {
-            clearButton.style.display = "inline-block";
-        } else {
-            clearButton.style.display = "none";
-        }
-    }
-
-    function clearInput() {
-        var input = document.getElementById("searchInput");
-        input.value = "";
-        input.focus();
-        showClearButton();
-    }
-</script>
+            $("#clearButton").on("click", function() {
+                $("#searchInput").val("").focus();
+                $(this).hide();
+            });
+        });
+    </script>
 </body>
 </html>
