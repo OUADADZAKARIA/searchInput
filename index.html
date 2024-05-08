@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search Input</title>
+<style>
+    input[type="search"]::-webkit-search-cancel-button {
+        display: none;
+    }
+</style>
+</head>
+<body>
+<input type="search" id="searchInput" oninput="showClearButton()" placeholder="Search...">
+<button id="clearButton" style="display: none;" onclick="clearInput()">X</button>
+
+<script>
+    function showClearButton() {
+        var input = document.getElementById("searchInput");
+        var clearButton = document.getElementById("clearButton");
+
+        if (input.value.length >= 3) {
+            clearButton.style.display = "inline-block";
+        } else {
+            clearButton.style.display = "none";
+        }
+    }
+
+    function clearInput() {
+        var input = document.getElementById("searchInput");
+        input.value = "";
+        input.focus();
+        showClearButton();
+    }
+</script>
+</body>
+</html>
