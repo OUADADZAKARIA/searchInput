@@ -1,0 +1,26 @@
+FROM php:8.2-fpm-alpine
+
+# Installer les dépendances
+RUN apk --no-cache add \
+        curl \
+        unzip \
+        libpng-dev \
+        libjpeg-turbo-dev \
+        libwebp-dev \
+        freetype-dev \
+        icu-dev \
+        mysql-client \
+        bash \
+        && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+        && docker-php-ext-install gd pdo pdo_mysql intl opcache
+
+# Télécharger et installer Matomo
+RUN curl -sS https://builds.matomo.org/matomo-latest.zip -o matomo.zip \
+    && unzip matomo.zip -d /var/www/html \
+    && rm matomo.zip
+
+WORKDIR /var/www/html/matomo
+
+EXPOSE 9000
+
+CMD ["php-fpm"]
