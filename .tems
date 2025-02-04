@@ -1,0 +1,65 @@
+import * as cdk from 'aws-cdk-lib';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import { Construct } from 'constructs';
+
+export class MatomoFargateStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
+
+    // 📌 VPC
+    const vpc = new ec2.Vpc(this, 'MatomoVpc', { maxAzs: 2 });
+
+    // 📌 Cluster ECS
+    const cluster = new ecs.Cluster(this, 'MatomoCluster', { vpc });
+
+    // 📌 Rôle d'exécution ECS
+    const executionRole = new iam.Role(this, 'EcsExecutionRole', {
+      assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'),
+      ],
+    });
+
+    // 📌 Définition de la tâche ECS
+    const taskDefinition = new ecs.FargateTaskDefinition(this, 'MatomoTask', {
+      memoryLimitMiB: 1024,
+      cpu: 512,
+      executionRole,
+    });
+
+    // 📌 Conteneur Matomo (PHP-FPM)
+    const matomoContainer = taskDefinition.addContainer('MatomoPHP', {
+      image: ecs.ContainerImage.fromRegistry('matomo:fpm-alpine'),  // 📌 Utilisation de Docker Hub
+      logging: new ecs.AwsLogDriver({ streamPrefix: 'matomo-php' }),
+    });
+    matomoContainer.addPortMappings({ containerPort: 9000 });
+
+    // 📌 Conteneur NGINX
+    const nginxContainer = taskDefinition.addContainer('MatomoNginx', {
+      image: ecs.ContainerImage.fromRegistry('nginx:alpine'),  // 📌 Utilisation de Docker Hub
+      logging: new ecs.AwsLogDriver({ streamPrefix: 'matomo-nginx' }),
+    });
+    nginxContainer.addPortMappings({ containerPort: 80 });
+
+    // 📌 Load Balancer
+    const loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'MatomoALB', {
+      vpc,
+      internetFacing: true,
+    });
+
+    const listener = loadBalancer.addListener('MatomoListener', { port: 80 });
+    const targetGroup = listener.addTargets('MatomoTarget', {
+      port: 80,
+      targets: [new ecs.FargateService(this, 'MatomoService', {
+        cluster,
+        taskDefinition,
+        desiredCount: 1,
+      })],
+    });
+
+    new cdk.CfnOutput(this, 'MatomoURL', { value: loadBalancer.loadBalancerDnsName });
+  }
+}
